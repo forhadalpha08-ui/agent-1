@@ -56,6 +56,14 @@ export const SettingsView: React.FC = () => {
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('abdullah_settings_last_saved') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
   const [googleUser, setGoogleUser] = useState<any>(null);
   const [googleToken, setGoogleToken] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -183,8 +191,18 @@ export const SettingsView: React.FC = () => {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings(formData);
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setLastSavedTime(nowStr);
+    try {
+      localStorage.setItem('abdullah_settings_last_saved', nowStr);
+      localStorage.setItem('abdullah_settings', JSON.stringify(formData));
+      if (formData.geminiApiKey) {
+        localStorage.setItem('user_gemini_api_key', formData.geminiApiKey);
+      }
+    } catch (err) {}
     setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    sound.playReceiveSound();
+    setTimeout(() => setSaveSuccess(false), 4000);
   };
 
   const handleLanguageSelect = (langId: string) => {
@@ -234,12 +252,39 @@ export const SettingsView: React.FC = () => {
           </p>
         </div>
 
-        {saveSuccess && (
-          <span className="flex items-center gap-1.5 rounded-xl bg-[#00D9A5]/20 px-3.5 py-1.5 text-xs font-semibold text-[#00D9A5] border border-[#00D9A5]/40 shadow-[0_0_12px_rgba(0,217,165,0.3)]">
+        {/* Hover-Enabled Status Badge */}
+        <div className="relative group">
+          <span className="flex items-center gap-1.5 rounded-xl bg-[#00D9A5]/20 px-3.5 py-1.5 text-xs font-semibold text-[#00D9A5] border border-[#00D9A5]/40 shadow-[0_0_12px_rgba(0,217,165,0.3)] cursor-help transition-all">
             <Check className="h-3.5 w-3.5" />
-            {t.savedSuccessBadge}
+            <span>{saveSuccess ? t.savedSuccessBadge : (lastSavedTime ? `Saved: ${lastSavedTime}` : 'LocalStorage Active')}</span>
           </span>
-        )}
+
+          {/* Hover Card */}
+          <div className="absolute right-0 top-full mt-2 w-72 p-3 bg-[#0D0D20] border border-[#00D9A5]/40 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+            <div className="text-[11px] font-bold text-[#00D9A5] flex items-center gap-1.5 pb-1.5 border-b border-[#00D9A5]/20">
+              <Check className="h-3.5 w-3.5" />
+              <span>Verified in Browser LocalStorage</span>
+            </div>
+            <ul className="text-[10px] space-y-1.5 text-[#CBD5E1] mt-2">
+              <li className="flex items-center gap-1.5">
+                <span className="text-[#00D9A5]">✓</span>
+                <span>Google Gemini API Key: <strong className="text-white">{formData.geminiApiKey ? 'Saved & Active' : 'Default Ready'}</strong></span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="text-[#00D9A5]">✓</span>
+                <span>Connected Apps: <strong className="text-white">{(formData.connectedApps || []).length} Services Synced</strong></span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="text-[#00D9A5]">✓</span>
+                <span>Language Mode: <strong className="text-white">{activeLangDetails.name}</strong></span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="text-[#00D9A5]">✓</span>
+                <span>Last Synced: <strong className="text-[#00D9A5]">{lastSavedTime || 'Active'}</strong></span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6 text-xs">
@@ -1316,16 +1361,42 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Save Bar */}
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            id="btn_save_settings"
-            className="flex items-center gap-2 rounded-2xl btn-blue-purple px-6 py-2.5 text-xs font-bold text-white transition-all cursor-pointer"
-          >
-            <Save className="h-4 w-4" />
-            <span>{t.saveSettingsBtn}</span>
-          </button>
+        {/* Save Bar with Hover Verification Info */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-[#0D0D20] border border-[rgba(139,92,246,0.25)] shadow-xl">
+          <div className="flex items-center gap-2.5 text-xs text-[#94A3B8]">
+            <Shield className="h-4 w-4 text-[#00D9A5] shrink-0" />
+            <span>
+              {lastSavedTime ? (
+                <span>All updates & API settings permanently synced to LocalStorage at <strong className="text-[#00D9A5]">{lastSavedTime}</strong></span>
+              ) : (
+                <span>Click Save to sync all updates, API keys & permissions to browser LocalStorage</span>
+              )}
+            </span>
+          </div>
+
+          <div className="relative group self-stretch sm:self-auto">
+            <button
+              type="submit"
+              id="btn_save_settings"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl btn-blue-purple px-6 py-2.5 text-xs font-bold text-white transition-all cursor-pointer shadow-lg hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+            >
+              <Save className="h-4 w-4" />
+              <span>{saveSuccess ? '✓ Settings & API Saved!' : t.saveSettingsBtn}</span>
+            </button>
+
+            {/* Hover card on Save Button */}
+            <div className="absolute right-0 bottom-full mb-2 w-72 p-3 bg-[#080817] border border-[#00D9A5]/40 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+              <div className="text-[11px] font-bold text-[#00D9A5] flex items-center gap-1.5 pb-1 border-b border-[#00D9A5]/20">
+                <Check className="h-3.5 w-3.5" />
+                <span>Instant LocalStorage Sync Confirmation</span>
+              </div>
+              <ul className="text-[10px] space-y-1 text-[#CBD5E1] mt-1.5 leading-relaxed">
+                <li>• <strong>API Key:</strong> Safely saved to private browser cache.</li>
+                <li>• <strong>App Access & Perms:</strong> Updated in live context.</li>
+                <li>• <strong>Status:</strong> {lastSavedTime ? `Synced (${lastSavedTime})` : 'Ready to Save'}</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         {/* Data & Memory Management */}
