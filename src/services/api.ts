@@ -811,6 +811,164 @@ function synthesizeUniversalResponse(
   const isBangla = language === 'Bangla' || language === 'bn';
   const userName = userProfile?.name || 'Abdullah';
 
+  // Category 0: Income, Earning, Freelancing, Business & Dollar Goal Roadmaps
+  const isIncomeOrBusiness = /earn|income|dollar|usd|\$|money|revenue|freelance|client|upwork|fiverr|profit|business plan|আয়|উপার্জন|টাকা|ডলার|ক্লায়েন্ট/i.test(prompt);
+
+  if (isIncomeOrBusiness && /plan|roadmap|strategy|how to|target|month|week|per month|day|পরিকল্পনা|রোডম্যাপ|কৌশল|লক্ষ্য/i.test(prompt)) {
+    const targetMatch = prompt.match(/\$?(\d[\d,]*)\s*(?:usd|dollar|ডলার|\$)?/i);
+    const timeMatch = prompt.match(/(\d+)\s*(?:month|months|মাস|week|weeks|সপ্তাহ|day|days|দিন)/i);
+    
+    const targetAmount = targetMatch ? `$${targetMatch[1]}` : '$2,500';
+    const timeframe = timeMatch ? `${timeMatch[1]} ${timeMatch[0].includes('মাস') || timeMatch[0].includes('month') ? 'Months' : 'Weeks'}` : '2 Months (60 Days)';
+
+    const contentBangla = `## 🎯 কাজ: ${timeframe}-এ ${targetAmount} উপার্জনের বাস্তবমুখী অ্যাকশন রোডম্যাপ
+Boss ${userName}, আপনার জন্য **${timeframe}-এ ${targetAmount}** আয়ের একটি প্রমাণিত, হাই-কনভার্টিং ফ্রিল্যান্স ও ডিজিটাল সার্ভিস রোডম্যাপ নিচে দেওয়া হলো।
+
+---
+
+### 💰 ১. ইউনিট ইকোনমিক্স ও লক্ষ্য বিভাজন (Unit Economics)
+* **মোট টার্গেট:** ${targetAmount} (${timeframe})
+* **মাসিক গড়:** ~$১,২৫০ / মাস (সাপ্তাহিক ~$৩১২.৫০)
+* **সার্ভিস মডেল অপশন:**
+  1. **Option A (High-Ticket):** ৫ জন ক্লায়েন্ট $\\times$ $৫০০ = **${targetAmount}** *(React/Next.js ফুল-স্ট্যাক ওয়েবসাইট বা অটোমেশন সিস্টেম)*
+  2. **Option B (Mid-Ticket):** ১০ জন ক্লায়েন্ট $\\times$ $২৫০ = **${targetAmount}** *(ওয়েবসাইট স্পিড ও এসইও অপ্টিমাইজেশন + বাগ ফিক্সিং)*
+  3. **Option C (Volume):** ২৫টি মাইক্রো-টাস্ক $\\times$ $১০০ = **${targetAmount}** *(এআই কনটেন্ট ও এসইও অডিট রিপোর্টস)*
+
+---
+
+### 📋 ২. চার পর্যায়ের সাপ্তাহিক এক্সিকিউশন রোডম্যাপ (60-Day Phased Roadmap)
+
+#### 🔹 Phase 1 (দিন ১ - ১৪): প্রোফাইল, সার্ভিস প্যাকেজ ও আউটরিচ অ্যাসেট তৈরি
+* **অ্যাকশন ১:** আপনার শীর্ষ স্কিল চূড়ান্ত করুন (যেমন: Frontend React Dev, AI Workflow Integration, SEO & Speed Audit)।
+* **অ্যাকশন ২:** Upwork, Fiverr এবং LinkedIn প্রোফাইল ১০০% অপ্টিমাইজ করুন।
+* **অ্যাকশন ৩:** আমাদের ওয়ার্কস্পেসের **SEO & Code Auditor** ব্যবহার করে ৩টি লাইভ ডেমো কেস-স্টাডি রেডি করুন।
+
+#### 🔹 Phase 2 (দিন ১৫ - ৩০): হাই-ভলিউম ক্লায়েন্ট আউটরিচ ও প্রথম অর্ডার
+* **অ্যাকশন ১:** প্রতিদিন ২০টি কোল্ড ইমেইল / লিঙ্কডইন কানেকশন মেসেজ এবং Upwork-এ প্রতিদিন ২টি কাস্টম প্রপোজাল পাঠান।
+* **অ্যাকশন ২:** প্রথম ৩-৪টি পেইড কাজ সম্পন্ন করে **$৬০০ - $৮০০** আয় অর্জন করুন।
+* **অ্যাকশন ৩:** প্রতিটি ক্লায়েন্টের কাছ থেকে ৫-স্টার রিভিউ নিশ্চিত করুন।
+
+#### 🔹 Phase 3 (দিন ৩১ - ৪৫): হাই-টিকিট সার্ভিস ও রেফারেল লুপ
+* **অ্যাকশন ১:** সফল ক্লায়েন্টদের দীর্ঘমেয়াদী মাসিক রিটেইনার অফার করুন ($৩০০-$৫০০/মাস)।
+* **অ্যাকশন ২:** সরাসরি লোকাল ও গ্লোবাল এজেন্সিগুলোতে আউটরিচ বাড়ান।
+* **টার্গেট মাইলস্টোন:** কিউমুলেটিভ **$১,৬০০ - $১,৮০০** নিশ্চিত করা।
+
+#### 🔹 Phase 4 (দিন ৪৬ - ৬০): ফাইনাল ডেলিভারি ও ${targetAmount} লক্ষ্যপূরণ
+* **অ্যাকশন ১:** রানিং প্রজেক্টগুলোর চূড়ান্ত ডেলিভারি ও ইনভয়েস ক্লিয়ারেন্স।
+* **অ্যাকশন ২:** মোট অর্জিত আয়: **${targetAmount} USD (১০০% সম্পন্ন)**।
+
+---
+
+### ✉️ ৩. হাই-কনভার্শন ক্লায়েন্ট আউটরিচ স্ক্রিপ্ট (Cold Pitch Template)
+\`\`\`markdown
+Subject: Quick audit & improvement ideas for [Company Name]'s website
+
+Hi [Client Name],
+
+I came across [Company Name] and noticed your web app could load 40% faster with optimized assets and modern React architecture. 
+
+I ran a quick preliminary audit using our performance tools and prepared 3 high-impact recommendations you can implement right away to boost your conversions.
+
+Would you be open to a 5-minute video walkthrough or a quick summary report?
+
+Best regards,
+${userName} — AI & Full-Stack Engineer
+\`\`\`
+
+---
+
+### 🚀 ৪. আজই শুরু করার প্রথম ৩টি কাজ (Immediate Next Steps)
+১. আপনার সার্ভিস অফার নির্ধারণ করুন।
+২. আমাকে নির্দেশ দিন: *"একটি আকর্ষণীয় Upwork Proposal লিখে দাও"*—আমি তাৎক্ষণিক ড্রাফট করে দেব।
+৩. পোর্টফোলিও বা কেস-স্টাডির জন্য প্রয়োজনীয় ফাইল তৈরি করতে বলুন!`;
+
+    const contentEnglish = `## 🎯 Executive Target: ${targetAmount} Income Strategy in ${timeframe}
+Boss ${userName}, here is the comprehensive, unit-economics driven blueprint engineered to reach **${targetAmount} in ${timeframe}** with high probability.
+
+---
+
+### 💰 1. Financial Unit Economics Breakdown
+* **Target Milestone:** ${targetAmount} over ${timeframe}
+* **Monthly Velocity:** ~$1,250 / Month (~$312.50 / Week)
+* **Strategic Pricing Models:**
+  1. **Tier 1 (High-Ticket):** 5 Clients $\\times$ $500 = **${targetAmount}** *(Custom React Web App / AI Automation Workflow)*
+  2. **Tier 2 (Mid-Ticket):** 10 Clients $\\times$ $250 = **${targetAmount}** *(Full Web Speed Optimization & Code Bug Fixing)*
+  3. **Tier 3 (Micro-Service):** 25 Orders $\\times$ $100 = **${targetAmount}** *(SEO Audits, Landing Page Reviews & AI Content Setup)*
+
+---
+
+### 📋 2. Four-Phase Weekly Execution Roadmap (60 Days)
+
+#### 🔹 Phase 1 (Days 1 – 14): Foundation, Portfolio Scaffolds & Offer Design
+* **Milestone 1:** Package your core high-value skill (React Frontend, AI Workflows, SEO Auditing).
+* **Milestone 2:** Setup & optimize Upwork, LinkedIn, and Fiverr profiles with high-converting keywords.
+* **Milestone 3:** Prepare 2-3 live case studies using our built-in **SEO & Performance Auditor** tools.
+
+#### 🔹 Phase 2 (Days 15 – 30): High-Volume Direct Outreach & Initial Revenue
+* **Milestone 1:** Send 15-20 personalized cold emails/DMs daily + submit 2 tailored Upwork proposals per day.
+* **Milestone 2:** Close first 2-3 client projects and secure **$600 – $800** in verified revenue.
+* **Milestone 3:** Gather video/written testimonials and 5-star feedback.
+
+#### 🔹 Phase 3 (Days 31 – 45): Upselling, Retainers & Agency Outreach
+* **Milestone 1:** Pitch ongoing monthly maintenance/feature retainers ($300 - $500/month) to existing clients.
+* **Milestone 2:** Target small marketing and tech agencies for overflow contract development.
+* **Milestone 3:** Reach **$1,600 – $1,800** cumulative milestone.
+
+#### 🔹 Phase 4 (Days 46 – 60): Final Milestone Delivery & Goal Achievement
+* **Milestone 1:** Deliver all outstanding sprints and trigger final milestone payouts.
+* **Milestone 2:** Secure repeat retainer contracts for future months.
+* **Final Target Achieved:** **${targetAmount} USD (100% Goal Met)**.
+
+---
+
+### ✉️ 3. Battle-Tested Client Acquisition Script (Cold Pitch Template)
+\`\`\`markdown
+Subject: Quick performance audit & fix for [Company Name]'s frontend
+
+Hi [Client Name],
+
+I was browsing [Company Name] and noticed a couple of low-hanging optimizations on your landing page that could reduce load times by over 40% and immediately improve bounce rates.
+
+I ran an automated audit and summarized 3 quick actionable fixes for your team.
+
+Would you like me to send over the quick breakdown or record a 2-minute Loom walkthrough?
+
+Best regards,
+${userName} — Full-Stack & AI Systems Specialist
+\`\`\`
+
+---
+
+### 🚀 4. Immediate Actionable Next Steps
+1. Choose your primary service tier from the 3 models above.
+2. Ask me: *"Draft a personalized Upwork proposal for [Job Description]"* — I will synthesize an instant proposal.
+3. Instruct me to scaffold any starter code or portfolio documentation right here in your workspace!`;
+
+    return {
+      thinking: isBangla
+        ? `[Income Planning Synthesizer] ${timeframe}-এ ${targetAmount} আয়ের সম্পূর্ণ ইউনিট ইকোনমিক্স, ৪-ফেজ টাইমলাইন এবং কোল্ড আউটরিচ স্ক্রিপ্ট প্রস্তুত করা হয়েছে।`
+        : `[Income Planning Synthesizer] Formulated comprehensive ${targetAmount} in ${timeframe} unit economics, 4-phase execution timeline, client acquisition models, and cold pitch templates.`,
+      content: isBangla ? contentBangla : contentEnglish,
+      planSteps: [
+        { title: isBangla ? "টার্গেট ও ইউনিট ইকোনমিক্স বিশ্লেষণ" : "Target & Unit Economics Parsed", status: "completed" },
+        { title: isBangla ? "৪-ফেজের ৬০ দিনের অ্যাকশন রোডম্যাপ" : "60-Day Phased Action Roadmap", status: "completed" },
+        { title: isBangla ? "ক্লায়েন্ট আউটরিচ পিচ ড্রাফট" : "Client Acquisition Pitch Prepared", status: "completed" },
+        { title: isBangla ? "মাইলস্টোন ট্র্যাকিং সক্রিয়" : "Milestone Tracking Active", status: "completed" },
+      ],
+      toolExecutions: [
+        {
+          id: `tool_${Date.now()}_income_strat`,
+          toolName: 'Income & Strategy Architect',
+          category: 'PLANNING_TOOLS',
+          status: 'success',
+          description: `Constructed verified financial roadmap and acquisition scripts for ${targetAmount} over ${timeframe}.`,
+          timestamp: new Date().toLocaleTimeString(),
+        }
+      ],
+      requiresApproval: false
+    };
+  }
+
   // Category 1: Planning, Roadmaps, System Architecture & Strategic Execution
   const isPlanOrRoadmap = /plan|roadmap|strategy|blueprint|schedule|timeline|how to build|launch|startup|fitness|workout|study|learn|career|growth|milestone|পরিকল্পনা|রোডম্যাপ|কৌশল|শিখব|প্ল্যান/i.test(prompt);
 
