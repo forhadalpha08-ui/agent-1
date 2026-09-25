@@ -48,10 +48,127 @@ export async function sendAgentMessage(
 
     return await res.json();
   } catch (error: any) {
-    console.warn('Backend API server unreachable, activating client-side AI Agent Engine for GitHub Pages:', error.message);
+    console.warn('Backend API server unreachable, checking for client-side API configuration:', error.message);
+    
+    // Check if user has configured a Gemini API key in Settings or LocalStorage for GitHub Pages
+    const directApiKey = settings?.geminiApiKey || 
+      (typeof localStorage !== 'undefined' ? (localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gemini_api_key')) : null);
+
+    if (directApiKey && directApiKey.trim().length > 10) {
+      try {
+        console.log('⚡ Direct Browser Gemini Engine Active: Calling Google Generative Language API directly...');
+        return await callBrowserGeminiApi(
+          directApiKey.trim(),
+          prompt,
+          conversationHistory,
+          language,
+          attachedFiles,
+          userProfile,
+          settings
+        );
+      } catch (browserApiError: any) {
+        console.warn('Direct Browser Gemini API call failed, falling back to local synthesizer:', browserApiError.message);
+      }
+    }
+
     // Smooth fallback for GitHub Pages live static hosting
     return generateClientSideAgentResponse(prompt, language, attachedFiles, userProfile, settings);
   }
+}
+
+// In-Browser Direct Gemini API Engine
+async function callBrowserGeminiApi(
+  apiKey: string,
+  prompt: string,
+  conversationHistory: MessageItem[],
+  language: string,
+  attachedFiles: any[] = [],
+  userProfile?: UserProfile,
+  settings?: any
+): Promise<ChatResponse> {
+  const modelName = settings?.geminiModel || 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const isBangla = language === 'Bangla' || language === 'bn';
+  const userName = userProfile?.name || 'Abdullah';
+  const userRole = userProfile?.role ? ` (${userProfile.role})` : '';
+  const customInstructions = userProfile?.customAgentInstructions ? `\n[DIRECTIVE]: ${userProfile.customAgentInstructions}` : '';
+  const techStack = userProfile?.techStack ? `\n[TECH STACK]: ${userProfile.techStack}` : '';
+
+  const systemInstructionText = isBangla
+    ? `আপনি হলেন Boss ${userName}-এর উচ্চক্ষমতাসম্পন্ন পার্সোনাল এআই চিফ অব স্টাফ, মাস্টার আর্কিটেক্ট ও অটোনোমাস ওয়ার্ক এজেন্ট (Google DeepMind / Antigravity Agent স্টাইল)। Boss ${userName}${userRole}-কে যেকোনো কাজ এবং বাস্তব জীবনের নির্দেশনায় সহায়তা করতে প্রস্তুত।${customInstructions}${techStack}
+যেকোনো বিষয়ের প্রশ্নের পুঙ্খানুপুঙ্খ উত্তর দিন (কোড, গণিত, বিজ্ঞান, ব্যবসা, লেখালেখি, দৈনন্দিন কাজ)।
+পরিকল্পনা করার ক্ষেত্রে multi-phase roadmap, milestones, architecture, risk management, এবং verification protocol তৈরি করুন।
+উত্তরের শুরুতে <thinking>...</thinking> ব্লকে আপনার যৌক্তিক বিশ্লেষণ প্রকাশ করুন।`
+    : `You are Boss ${userName}'s elite personal AI Chief of Staff, Master Systems Architect, and Autonomous Work Agent (Google DeepMind / Antigravity Agent style). Assisting Boss ${userName}${userRole}.${customInstructions}${techStack}
+Answer ANY question across coding, mathematics, systems architecture, business, research, and personal work with master-level depth.
+When asked to plan, output an exhaustive multi-phase roadmap with milestones, architecture/code blueprints, risk mitigation, and verification protocol.
+Output a <thinking>...</thinking> block at the very start of your response.`;
+
+  let fileContext = '';
+  if (attachedFiles && attachedFiles.length > 0) {
+    fileContext = '\n\n[USER ATTACHED FILES]:\n' + attachedFiles.map((f: any) => `File: ${f.name} (${f.type || 'text'})\nContent: ${f.content || ''}`).join('\n---\n');
+  }
+
+  const contents = [
+    ...conversationHistory.slice(-6).map((msg) => ({
+      role: msg.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }],
+    })),
+    {
+      role: 'user',
+      parts: [{ text: `${prompt}${fileContext}\n\n[Respond in ${language}]` }],
+    },
+  ];
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents,
+      systemInstruction: {
+        parts: [{ text: systemInstructionText }],
+      },
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 8192,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error?.message || `Gemini API call failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  let thinkingText = '';
+  const thinkingMatch = rawText.match(/<thinking>([\s\S]*?)<\/thinking>/i);
+  if (thinkingMatch) {
+    thinkingText = thinkingMatch[1].trim();
+    rawText = rawText.replace(/<thinking>[\s\S]*?<\/thinking>/i, '').trim();
+  }
+
+  const planSteps = generateDynamicPlanSteps(prompt, isBangla);
+
+  return {
+    content: rawText,
+    thinking: thinkingText,
+    planSteps,
+    toolExecutions: [
+      {
+        id: `browser_gemini_${Date.now()}`,
+        toolName: 'Google Gemini Direct Engine',
+        category: 'AI_FOUNDATION',
+        status: 'success',
+        description: `Direct in-browser inference completed via ${modelName}.`,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ],
+    mode: `BROWSER_GEMINI_DIRECT (${modelName})`,
+  };
 }
 
 export async function executeToolApi(

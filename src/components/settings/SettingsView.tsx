@@ -316,6 +316,74 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
+        {/* Gemini AI Engine & API Key Configuration */}
+        <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-4 shadow-xl">
+          <div className="flex items-center justify-between pb-3 border-b border-[rgba(139,92,246,0.2)]">
+            <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[#C084FC]" />
+              <span>Google Gemini AI Engine & Cloud API</span>
+            </h2>
+            <span className="text-[10px] font-mono text-[#00D9A5] bg-[#00D9A5]/15 px-2.5 py-1 rounded-lg border border-[#00D9A5]/30">
+              {formData.geminiApiKey ? 'API Configured' : 'Live / Hybrid Ready'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[#94A3B8] font-medium">
+                  Google Gemini API Key (Direct Browser & Cloud)
+                </label>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-[#C084FC] hover:underline flex items-center gap-1"
+                >
+                  <span>Get Free Gemini Key ↗</span>
+                </a>
+              </div>
+              <input
+                type="password"
+                placeholder="AIzaSy..."
+                value={formData.geminiApiKey || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({ ...formData, geminiApiKey: val });
+                  try {
+                    localStorage.setItem('user_gemini_api_key', val);
+                  } catch (err) {}
+                }}
+                className="w-full rounded-xl bg-[#080817] px-3.5 py-2.5 text-xs sm:text-sm text-[#F8FAFC] border border-[rgba(139,92,246,0.25)] focus:outline-none focus:border-[#A855F7] font-mono"
+              />
+              <p className="mt-1.5 text-[11px] text-[#94A3B8]">
+                Entering your Gemini API Key enables direct, real-time in-browser inference for live web hosting (e.g. GitHub Pages) with DeepMind Antigravity-grade reasoning.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-[#94A3B8] font-medium mb-1">Active AI Model</label>
+              <select
+                value={formData.geminiModel || 'gemini-2.5-flash'}
+                onChange={(e) => setFormData({ ...formData, geminiModel: e.target.value })}
+                className="w-full rounded-xl bg-[#080817] px-3.5 py-2.5 text-xs sm:text-sm text-[#F8FAFC] border border-[rgba(139,92,246,0.25)] focus:outline-none focus:border-[#A855F7]"
+              >
+                <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (Ultra-fast, High-Fidelity & Grounding)</option>
+                <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (Deep Architecture & Complex Reasoning)</option>
+                <option value="gemini-2.0-flash">🚀 Gemini 2.0 Flash (Lightweight & Low Latency)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[#94A3B8] font-medium mb-1">Execution Mode</label>
+              <div className="rounded-xl bg-[#080817] p-2.5 border border-[rgba(139,92,246,0.2)] flex items-center justify-between">
+                <span className="text-xs text-[#F8FAFC]">Autonomous Universal Q&A + Multi-Phase Planning</span>
+                <span className="text-[10px] bg-[#7C3AED]/20 text-[#C084FC] px-2 py-0.5 rounded-md border border-[#7C3AED]/40">Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Agent Profile & Identity */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-4 shadow-xl">
           <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">

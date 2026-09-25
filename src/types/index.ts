@@ -155,6 +155,8 @@ export interface SettingsState {
   aiStatus: 'active' | 'busy' | 'idle';
   systemPersona?: 'executive-assistant' | 'standard';
   executivePersona?: ExecutivePersonaConfig;
+  geminiApiKey?: string;
+  geminiModel?: string;
   crewAiEnabled?: boolean;
   crewAiUrl?: string;
   crewAiToken?: string;
