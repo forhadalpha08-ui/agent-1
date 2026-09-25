@@ -20,6 +20,9 @@ import {
   Calendar,
   FolderGit,
   Database,
+  Trash2,
+  Power,
+  Layers,
 } from 'lucide-react';
 import { useAgent } from '../../context/AgentContext';
 import { TECH_LANGUAGES, getLanguage } from '../../data/languages';
@@ -29,6 +32,8 @@ export const SettingsView: React.FC = () => {
   const {
     settings,
     updateSettings,
+    deleteConnectedApp,
+    toggleConnectedApp,
     tasks,
     files,
     activities,
@@ -709,6 +714,243 @@ export const SettingsView: React.FC = () => {
               <span className="rounded-lg bg-[#00D9A5]/15 px-2.5 py-1 text-[10px] font-mono font-semibold text-[#00D9A5] border border-[#00D9A5]/30">
                 Connected & Armed
               </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* APPLICATION ACCESS CONTROL & CONNECTED APPS REGISTRY     */}
+        {/* ======================================================== */}
+        <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-5 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[rgba(139,92,246,0.2)] pb-3">
+            <div>
+              <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
+                <Layers className="h-4 w-4 text-[#C084FC]" />
+                <span>Application Access Control & Connected Apps</span>
+              </h2>
+              <p className="text-[11px] text-[#94A3B8] mt-0.5">
+                Select and toggle read/action access for any service, or delete applications directly here or via chat.
+              </p>
+            </div>
+            <span className="self-start sm:self-auto rounded-lg bg-[#00D9A5]/15 px-2.5 py-1 text-[10px] font-mono font-semibold text-[#00D9A5] border border-[#00D9A5]/30">
+              {(settings.connectedApps || []).filter(a => a.enabled !== false).length} Apps Active
+            </span>
+          </div>
+
+          {/* Master Permission Toggles */}
+          <div className="space-y-3">
+            <span className="text-[11px] font-bold tracking-wider text-[#C084FC] uppercase block">
+              Core Application Service Permissions
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Google Search Engine Grounding */}
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.18)] cursor-pointer hover:border-[#7C3AED]/40 transition-all">
+                <div>
+                  <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-[#00D9A5]" />
+                    <span>Google Search Engine Grounding</span>
+                  </span>
+                  <span className="text-[10px] text-[#94A3B8] block mt-0.5">
+                    Live internet search indexing and real-time facts retrieval.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.enableGoogleSearch ?? true}
+                  onChange={(e) => setFormData({ ...formData, enableGoogleSearch: e.target.checked })}
+                  className="h-4 w-4 rounded accent-[#7C3AED] shrink-0 ml-2"
+                />
+              </label>
+
+              {/* Google Workspace & Cloud */}
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.18)] cursor-pointer hover:border-[#7C3AED]/40 transition-all">
+                <div>
+                  <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-[#38BDF8]" />
+                    <span>Google Workspace (Gmail & Drive)</span>
+                  </span>
+                  <span className="text-[10px] text-[#94A3B8] block mt-0.5">
+                    Sync and read emails, documents, sheets, and drive files.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.enableGoogleWorkspace ?? true}
+                  onChange={(e) => setFormData({ ...formData, enableGoogleWorkspace: e.target.checked })}
+                  className="h-4 w-4 rounded accent-[#7C3AED] shrink-0 ml-2"
+                />
+              </label>
+
+              {/* Virtual File System & Storage */}
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.18)] cursor-pointer hover:border-[#7C3AED]/40 transition-all">
+                <div>
+                  <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
+                    <FolderGit className="h-3.5 w-3.5 text-[#F59E0B]" />
+                    <span>Virtual Workspace File System</span>
+                  </span>
+                  <span className="text-[10px] text-[#94A3B8] block mt-0.5">
+                    Create, edit, analyze, and manage persistent project files.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.enableFileAccess ?? true}
+                  onChange={(e) => setFormData({ ...formData, enableFileAccess: e.target.checked })}
+                  className="h-4 w-4 rounded accent-[#7C3AED] shrink-0 ml-2"
+                />
+              </label>
+
+              {/* Code Sandbox & AST Engine */}
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.18)] cursor-pointer hover:border-[#7C3AED]/40 transition-all">
+                <div>
+                  <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
+                    <Cpu className="h-3.5 w-3.5 text-[#A855F7]" />
+                    <span>Code Sandbox & AST Engine</span>
+                  </span>
+                  <span className="text-[10px] text-[#94A3B8] block mt-0.5">
+                    Static code scanning, debugging, and automated refactoring.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.enableCodeExecution ?? true}
+                  onChange={(e) => setFormData({ ...formData, enableCodeExecution: e.target.checked })}
+                  className="h-4 w-4 rounded accent-[#7C3AED] shrink-0 ml-2"
+                />
+              </label>
+
+              {/* WhatsApp Auto-Responder */}
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.18)] cursor-pointer hover:border-[#7C3AED]/40 transition-all">
+                <div>
+                  <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
+                    <Smartphone className="h-3.5 w-3.5 text-[#10B981]" />
+                    <span>WhatsApp Business Responder</span>
+                  </span>
+                  <span className="text-[10px] text-[#94A3B8] block mt-0.5">
+                    Autonomous multilingual customer reply drafting and dispatches.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.enableWhatsAppResponder ?? true}
+                  onChange={(e) => setFormData({ ...formData, enableWhatsAppResponder: e.target.checked })}
+                  className="h-4 w-4 rounded accent-[#7C3AED] shrink-0 ml-2"
+                />
+              </label>
+
+              {/* In-Chat App Deletion Control */}
+              <label className="flex items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.18)] cursor-pointer hover:border-[#7C3AED]/40 transition-all">
+                <div>
+                  <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
+                    <Trash2 className="h-3.5 w-3.5 text-[#EF4444]" />
+                    <span>In-Chat App Control & Deletion</span>
+                  </span>
+                  <span className="text-[10px] text-[#94A3B8] block mt-0.5">
+                    Permit agent to uninstall/delete applications directly via chat commands.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.enableAppDeletionByChat ?? true}
+                  onChange={(e) => setFormData({ ...formData, enableAppDeletionByChat: e.target.checked })}
+                  className="h-4 w-4 rounded accent-[#7C3AED] shrink-0 ml-2"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Connected Applications List */}
+          <div className="pt-3 border-t border-[rgba(139,92,246,0.15)] space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold tracking-wider text-[#C084FC] uppercase block">
+                Installed Connected Applications
+              </span>
+              <span className="text-[10px] text-[#94A3B8]">
+                Chat command: <code className="text-[#00D9A5] bg-[#080817] px-1.5 py-0.5 rounded border border-[rgba(139,92,246,0.2)]">delete app [name]</code>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2.5">
+              {(formData.connectedApps || settings.connectedApps || []).map((app) => (
+                <div
+                  key={app.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.2)] gap-3 hover:border-[#7C3AED]/50 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-[#7C3AED]/15 border border-[#7C3AED]/30 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+                      <Layers className="h-4 w-4 text-[#C084FC]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs text-[#F8FAFC]">{app.name}</span>
+                        <span
+                          className={`text-[9px] font-mono px-2 py-0.5 rounded-full border ${
+                            app.enabled !== false
+                              ? 'bg-[#00D9A5]/15 text-[#00D9A5] border-[#00D9A5]/30'
+                              : 'bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30'
+                          }`}
+                        >
+                          {app.enabled !== false ? 'Active' : 'Disabled'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[#94A3B8] mt-0.5">{app.description}</p>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {app.permissions.map((perm, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[9px] bg-[#0D0D20] text-[#CBD5E1] px-1.5 py-0.5 rounded border border-[rgba(139,92,246,0.2)] font-mono"
+                          >
+                            {perm}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleConnectedApp(app.id);
+                        setFormData((prev) => ({
+                          ...prev,
+                          connectedApps: (prev.connectedApps || []).map((a) =>
+                            a.id === app.id
+                              ? { ...a, enabled: !a.enabled, status: !a.enabled ? 'connected' : 'idle' }
+                              : a
+                          ),
+                        }));
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-all ${
+                        app.enabled !== false
+                          ? 'bg-[#7C3AED]/20 text-[#C084FC] border-[#7C3AED]/40 hover:bg-[#7C3AED]/30'
+                          : 'bg-[#080817] text-[#94A3B8] border-[rgba(139,92,246,0.2)] hover:bg-[#0D0D20]'
+                      }`}
+                    >
+                      <Power className="h-3 w-3" />
+                      <span>{app.enabled !== false ? 'Enabled' : 'Disabled'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to delete and revoke permissions for ${app.name}?`)) {
+                          deleteConnectedApp(app.id);
+                          setFormData((prev) => ({
+                            ...prev,
+                            connectedApps: (prev.connectedApps || []).filter((a) => a.id !== app.id),
+                          }));
+                        }
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30 hover:bg-[#EF4444]/25 transition-all"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -157,10 +157,29 @@ export interface SettingsState {
   executivePersona?: ExecutivePersonaConfig;
   geminiApiKey?: string;
   geminiModel?: string;
+  enableGoogleSearch?: boolean;
+  enableGoogleWorkspace?: boolean;
+  enableFileAccess?: boolean;
+  enableCodeExecution?: boolean;
+  enableWhatsAppResponder?: boolean;
+  enableExternalAppActions?: boolean;
+  enableAppDeletionByChat?: boolean;
+  connectedApps?: ConnectedAppItem[];
   crewAiEnabled?: boolean;
   crewAiUrl?: string;
   crewAiToken?: string;
   crewAiOrgId?: string;
+}
+
+export interface ConnectedAppItem {
+  id: string;
+  name: string;
+  category: 'google_workspace' | 'development' | 'communication' | 'automation' | 'cloud';
+  description: string;
+  icon: string;
+  enabled: boolean;
+  status: 'connected' | 'idle' | 'disconnected';
+  permissions: string[];
 }
 
 export interface AlarmItem {

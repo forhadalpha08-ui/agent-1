@@ -11,6 +11,7 @@ import {
   UserProfile,
   AlarmItem,
   SessionContextMetadata,
+  ConnectedAppItem,
 } from '../types';
 import {
   INITIAL_TASKS,
@@ -26,6 +27,69 @@ import { performWebSearch } from '../utils/webSearch';
 import { sound } from '../services/sound';
 import { TECH_LANGUAGES, TechLanguage, getLanguage, getInitialLanguage, DEFAULT_LANGUAGE_ID } from '../data/languages';
 import { getPageTranslations, PageTranslations } from '../data/translations';
+
+export const INITIAL_CONNECTED_APPS: ConnectedAppItem[] = [
+  {
+    id: 'app_google_workspace',
+    name: 'Google Workspace (Drive, Gmail, Docs)',
+    category: 'google_workspace',
+    description: 'Read and sync emails, calendar meetings, documents, and drive spreadsheets.',
+    icon: 'Mail',
+    enabled: true,
+    status: 'connected',
+    permissions: ['Read Gmail', 'Search Drive', 'View Calendar Events', 'Read Sheets']
+  },
+  {
+    id: 'app_google_search',
+    name: 'Google Search Engine Grounding',
+    category: 'cloud',
+    description: 'Live internet search indexing and factual data grounding for up-to-the-minute insights.',
+    icon: 'Globe',
+    enabled: true,
+    status: 'connected',
+    permissions: ['Query Google Live Search', 'Extract Web Quotes', 'Ground Intelligence']
+  },
+  {
+    id: 'app_code_engine',
+    name: 'Code Sandbox & AST Engine',
+    category: 'development',
+    description: 'Syntax parsing, security audits, memory leak detection, and automated refactoring.',
+    icon: 'Cpu',
+    enabled: true,
+    status: 'connected',
+    permissions: ['Execute Static AST Scans', 'Generate Code Files', 'Verify Assertions']
+  },
+  {
+    id: 'app_file_manager',
+    name: 'Virtual Workspace File Manager',
+    category: 'development',
+    description: 'Create, edit, view, analyze, and manage persistent project files and code assets.',
+    icon: 'FolderGit',
+    enabled: true,
+    status: 'connected',
+    permissions: ['Read Files', 'Write Files', 'Delete Files', 'Export Workspace']
+  },
+  {
+    id: 'app_whatsapp_responder',
+    name: 'WhatsApp Business Auto-Responder',
+    category: 'communication',
+    description: 'Automated delayed intelligent reply drafting with multilingual sentiment matching.',
+    icon: 'Smartphone',
+    enabled: true,
+    status: 'connected',
+    permissions: ['Monitor Unreplied Messages', 'Draft Contextual Responses', 'Trigger Dispatches']
+  },
+  {
+    id: 'app_task_engine',
+    name: 'Autonomous Task & Work Scheduler',
+    category: 'automation',
+    description: 'Background sub-routine planner, priority organizer, and real-time execution engine.',
+    icon: 'Clock',
+    enabled: true,
+    status: 'connected',
+    permissions: ['Create Tasks', 'Set Smart Alarms', 'Schedule Cron Jobs']
+  }
+];
 
 export type ActiveView = 
   | 'dashboard' 
@@ -89,6 +153,10 @@ interface AgentContextType {
   updateSettings: (newSettings: Partial<SettingsState>) => void;
   launchQuickAction: (actionType: string) => void;
   performWorkspaceSearchAndPlan: (query: string) => Promise<void>;
+
+  // Connected Applications Management
+  deleteConnectedApp: (appId: string) => void;
+  toggleConnectedApp: (appId: string) => void;
 
   // WhatsApp-Style Deletion & Task Persistence Actions
   deleteMessageWhatsAppStyle: (messageId: string, deleteType: 'me' | 'everyone') => void;
@@ -404,6 +472,14 @@ export const AgentProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         documentSearch: true,
         actionPlanRequired: true,
       },
+      enableGoogleSearch: true,
+      enableGoogleWorkspace: true,
+      enableFileAccess: true,
+      enableCodeExecution: true,
+      enableWhatsAppResponder: true,
+      enableExternalAppActions: true,
+      enableAppDeletionByChat: true,
+      connectedApps: INITIAL_CONNECTED_APPS,
       crewAiEnabled: true,
       crewAiUrl: 'https://content-writing-crew-v1-b01bd292-f1d6-48e5--55d0aedd.crewai.com',
       crewAiToken: 'd29f6c0b7fee',
@@ -416,6 +492,7 @@ export const AgentProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return {
           ...defaultSettings,
           ...parsed,
+          connectedApps: parsed.connectedApps || INITIAL_CONNECTED_APPS,
           executivePersona: {
             ...defaultSettings.executivePersona,
             ...(parsed.executivePersona || {})
@@ -425,6 +502,34 @@ export const AgentProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (e) {}
     return defaultSettings;
   });
+
+  const deleteConnectedApp = (appId: string) => {
+    setSettings((prev) => {
+      const current = prev.connectedApps || INITIAL_CONNECTED_APPS;
+      const target = current.find(a => a.id === appId);
+      const updated = current.filter(a => a.id !== appId);
+      const newSettings = { ...prev, connectedApps: updated };
+      try {
+        localStorage.setItem('abdullah_settings', JSON.stringify(newSettings));
+      } catch (e) {}
+      if (target) {
+        addActivity(`App Removed: ${target.name}`, 'App Controller', `Uninstalled ${target.name} and revoked permissions.`, 'warning');
+      }
+      return newSettings;
+    });
+  };
+
+  const toggleConnectedApp = (appId: string) => {
+    setSettings((prev) => {
+      const current = prev.connectedApps || INITIAL_CONNECTED_APPS;
+      const updated = current.map(a => a.id === appId ? { ...a, enabled: !a.enabled, status: !a.enabled ? 'connected' as const : 'idle' as const } : a);
+      const newSettings = { ...prev, connectedApps: updated };
+      try {
+        localStorage.setItem('abdullah_settings', JSON.stringify(newSettings));
+      } catch (e) {}
+      return newSettings;
+    });
+  };
 
   const currentLanguage = useMemo(() => {
     return getLanguage(settings.language);
@@ -595,6 +700,52 @@ export const AgentProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }, 800);
 
       return;
+    }
+
+    // In-Chat App Deletion & Access Control Interceptor
+    const isAppDeleteCommand = 
+      /(?:delete|remove|uninstall|disconnect|disable)\s+(?:app|application|integration)\s+([a-zA-Z0-9_\-\s]+)/i.test(p) ||
+      /(?:অ্যাপ|অ্যাপ্লিকেশন|ইন্টিগ্রেশন)\s+(?:ডিলিট|মুছে\s*ফেলো|বন্ধ\s*করো|রিমুভ\s*করো)\s*([a-zA-Z0-9_\-\s]+)/i.test(p);
+
+    if (isAppDeleteCommand) {
+      const match = text.match(/(?:delete|remove|uninstall|disconnect|disable)\s+(?:app|application|integration)\s+([a-zA-Z0-9_\-\s]+)/i) ||
+                    text.match(/(?:অ্যাপ|অ্যাপ্লিকেশন|ইন্টিগ্রেশন)\s+(?:ডিলিট|মুছে\s*ফেলো|বন্ধ\s*করো|রিমুভ\s*করো)\s*([a-zA-Z0-9_\-\s]+)/i);
+      const query = (match ? match[1] : '').trim().toLowerCase();
+      
+      const currentApps = settings.connectedApps || INITIAL_CONNECTED_APPS;
+      const targetApp = currentApps.find(a => 
+        a.name.toLowerCase().includes(query) || 
+        a.id.toLowerCase().includes(query) ||
+        a.category.toLowerCase().includes(query)
+      );
+
+      if (targetApp) {
+        deleteConnectedApp(targetApp.id);
+
+        setTimeout(() => {
+          const respText = settings.language === 'Bangla'
+            ? `## 🗑️ অ্যাপ্লিকেশন সফলভাবে আনইনস্টল/ডিলিট করা হয়েছে!\n\nBoss ${userProfile.name}, আপনার নির্দেশ অনুযায়ী **${targetApp.name}** অ্যাপ্লিকেশনটি সম্পূর্ণ রিমুভ ও এর সমস্ত অ্যাক্সেস পারমিশন বাতিল করা হয়েছে।\n\n* **অ্যাপ নাম:** \`${targetApp.name}\`\n* **ক্যাটেগরি:** \`${targetApp.category}\`\n* **বাতিলকৃত পারমিশন:** ${targetApp.permissions.map(perm => `\`${perm}\``).join(', ')}\n* **স্ট্যাটাস:** \`Disconnected & Uninstalled\`\n\nআপনি যেকোনো সময় **Settings $\\to$ App Access Control** থেকে এটি পুনরায় যুক্ত করতে পারবেন।`
+            : `## 🗑️ Application Uninstalled & Access Revoked!\n\nBoss ${userProfile.name}, per your instruction, **${targetApp.name}** has been successfully removed and all its permissions have been revoked.\n\n* **Application:** \`${targetApp.name}\`\n* **Category:** \`${targetApp.category}\`\n* **Revoked Permissions:** ${targetApp.permissions.map(perm => `\`${perm}\``).join(', ')}\n* **Status:** \`Disconnected & Uninstalled\`\n\nYou can re-connect or manage applications anytime in **Settings $\\to$ App Access Control**.`;
+
+          const appMsg: MessageItem = {
+            id: `msg_agent_${Date.now()}`,
+            sender: 'agent',
+            text: respText,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            planSteps: [
+              { title: settings.language === 'Bangla' ? 'অ্যাপ আইডেন্টিফাই' : 'Identified target application', status: 'completed' },
+              { title: settings.language === 'Bangla' ? 'পারমিশন বাতিল' : 'Revoked security tokens & permissions', status: 'completed' },
+              { title: settings.language === 'Bangla' ? 'আনইনস্টলেশন সম্পন্ন' : 'Uninstallation confirmed', status: 'completed' }
+            ]
+          };
+
+          setMessages(prev => [...prev, appMsg]);
+          sound.playReceiveSound();
+          setIsGenerating(false);
+          setActivePlan(null);
+        }, 800);
+        return;
+      }
     }
 
     // Initial safe task planning representation
@@ -1257,6 +1408,10 @@ export const AgentProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateSessionContext,
         resetSessionContext,
         reorderUserGoals,
+
+        // Connected Applications Management
+        deleteConnectedApp,
+        toggleConnectedApp,
 
         // Activity Log Action
         addActivity,

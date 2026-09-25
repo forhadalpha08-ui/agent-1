@@ -129,40 +129,60 @@ Output a <thinking>...</thinking> block at the very start of your response.`;
   let modelUsed = '';
   let lastError: any = null;
 
-  for (const model of modelsToTry) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey.trim(),
-        },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: {
-            parts: [{ text: systemInstructionText }],
-          },
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 8192,
-          },
-        }),
-      });
+  const enableSearch = settings?.enableGoogleSearch !== false;
 
-      if (response.ok) {
-        const data = await response.json();
-        rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        if (rawText) {
-          modelUsed = model;
-          break;
+  for (const model of modelsToTry) {
+    // Try with Google Search Grounding if enabled
+    const configsToTry = enableSearch 
+      ? [
+          { tools: [{ googleSearch: {} }] },
+          {} // Fallback without search if grounding isn't supported for that key/model
+        ]
+      : [{}];
+
+    let modelSucceeded = false;
+
+    for (const extraConfig of configsToTry) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey.trim(),
+          },
+          body: JSON.stringify({
+            contents,
+            systemInstruction: {
+              parts: [{ text: systemInstructionText }],
+            },
+            ...extraConfig,
+            generationConfig: {
+              temperature: 0.4,
+              maxOutputTokens: 8192,
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (rawText) {
+            modelUsed = extraConfig.tools ? `${model} (Google Search Grounded)` : model;
+            modelSucceeded = true;
+            break;
+          }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          lastError = new Error(errData.error?.message || `Status ${response.status}`);
         }
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        lastError = new Error(errData.error?.message || `Status ${response.status}`);
+      } catch (err: any) {
+        lastError = err;
       }
-    } catch (err: any) {
-      lastError = err;
+    }
+
+    if (modelSucceeded) {
+      break;
     }
   }
 
