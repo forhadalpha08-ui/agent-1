@@ -1,44 +1,49 @@
-name: Work OS CI/CD Pipeline
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Clone repository
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Setup Node.js
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'npm'
 
-      # 3. Install Dependencies (Using npm install for maximum robustness)
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm install
 
-      # 4. Run Linter Checks
-      - name: Run Linter Checks
-        run: npm run lint || true
-
-      # 5. Build Application
       - name: Build Application
         run: npm run build
 
-      # 6. Upload Build Artifacts
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: dist-artifacts
-          path: dist/
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
