@@ -147,109 +147,126 @@ export const Sidebar: React.FC = () => {
             const isActive = activeView === item.id;
 
             return (
-              <button
-                key={item.id}
-                id={`sidebar_nav_${item.id}`}
-                onClick={() => setActiveView(item.id)}
-                className={`
-                  group
-                  relative
-                  flex
-                  w-full
-                  items-center
-                  gap-1.5
-                  xs:gap-2
-                  sm:gap-3
-                  rounded-xl
-                  px-2
-                  xs:px-2.5
-                  sm:px-3
-                  py-2
-                  xs:py-2.5
-                  sm:py-2.5
-                  text-left
-                  transition-all
-                  duration-200
-                  ${
-                    isActive
-                      ? `
-                        bg-gradient-to-r
-                        from-[#1D4ED8]
-                        via-[#4F46E5]
-                        to-[#7E17F8]
-                        text-white
-                        border
-                        border-white/30
-                        shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_0_22px_rgba(37,99,235,0.45)]
-                      `
-                      : `
-                        text-[#94A3B8]
-                        hover:bg-white/[0.06]
-                        hover:text-[#F8FAFC]
-                      `
-                  }
-                `}
-              >
-                {/* Icon box */}
-                <div
+              <div key={item.id} className="relative group/nav-item">
+                <button
+                  id={`sidebar_nav_${item.id}`}
+                  onClick={() => setActiveView(item.id)}
                   className={`
+                    group
+                    relative
                     flex
-                    h-6
-                    w-6
-                    xs:h-7
-                    xs:w-7
-                    sm:h-8
-                    sm:w-8
-                    shrink-0
+                    w-full
                     items-center
-                    justify-center
-                    rounded-lg
+                    gap-1.5
+                    xs:gap-2
+                    sm:gap-3
+                    rounded-xl
+                    px-2
+                    xs:px-2.5
+                    sm:px-3
+                    py-2
+                    xs:py-2.5
+                    sm:py-2.5
+                    text-left
                     transition-all
+                    duration-200
                     ${
                       isActive
-                        ? 'border border-white/25 bg-white/10 text-white'
-                        : 'text-[#94A3B8] group-hover:text-[#C084FC]'
+                        ? `
+                          bg-gradient-to-r
+                          from-[#1D4ED8]
+                          via-[#4F46E5]
+                          to-[#7E17F8]
+                          text-white
+                          border
+                          border-white/30
+                          shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_0_22px_rgba(37,99,235,0.45)]
+                        `
+                        : `
+                          text-[#94A3B8]
+                          hover:bg-white/[0.06]
+                          hover:text-[#F8FAFC]
+                        `
                     }
                   `}
                 >
-                  <Icon className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]" />
-                </div>
-
-                {/* Label */}
-                <span className="flex-1 text-[10px] xs:text-[11px] sm:text-xs md:text-[13px] font-medium tracking-tight truncate">
-                  {item.label}
-                </span>
-
-                {/* Badge */}
-                {item.badge !== undefined && (
-                  <span
+                  {/* Icon box */}
+                  <div
                     className={`
                       flex
-                      h-4
-                      min-w-4
-                      xs:h-4.5
-                      xs:min-w-4.5
-                      sm:h-5
-                      sm:min-w-5
+                      h-6
+                      w-6
+                      xs:h-7
+                      xs:w-7
+                      sm:h-8
+                      sm:w-8
+                      shrink-0
                       items-center
                       justify-center
-                      rounded-full
-                      px-1
-                      text-[9px]
-                      xs:text-[10px]
-                      font-bold
-                      shadow-sm
+                      rounded-lg
+                      transition-all
                       ${
-                        item.id === 'approvals'
-                          ? 'bg-[#D946EF] text-white shadow-[0_0_10px_rgba(217,70,239,0.7)]'
-                          : 'bg-[#7C3AED] text-white shadow-[0_0_10px_rgba(124,58,237,0.6)]'
+                        isActive
+                          ? 'border border-white/25 bg-white/10 text-white'
+                          : 'text-[#94A3B8] group-hover:text-[#C084FC]'
                       }
                     `}
                   >
-                    {item.badge}
+                    <Icon className="h-3.5 w-3.5 xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]" />
+                  </div>
+
+                  {/* Label */}
+                  <span className="flex-1 text-[10px] xs:text-[11px] sm:text-xs md:text-[13px] font-medium tracking-tight truncate">
+                    {item.label}
                   </span>
+
+                  {/* Badge */}
+                  {item.badge !== undefined && (
+                    <span
+                      className={`
+                        flex
+                        h-4
+                        min-w-4
+                        xs:h-4.5
+                        xs:min-w-4.5
+                        sm:h-5
+                        sm:min-w-5
+                        items-center
+                        justify-center
+                        rounded-full
+                        px-1
+                        text-[9px]
+                        xs:text-[10px]
+                        font-bold
+                        shadow-sm
+                        ${
+                          item.id === 'approvals'
+                            ? 'bg-[#D946EF] text-white shadow-[0_0_10px_rgba(217,70,239,0.7)]'
+                            : 'bg-[#7C3AED] text-white shadow-[0_0_10px_rgba(124,58,237,0.6)]'
+                        }
+                      `}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+
+                {/* Hover Tooltip Card for Settings & Nav items */}
+                {item.id === 'settings' && (
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-60 p-2.5 bg-[#0D0D20] border border-[#7C3AED]/40 rounded-xl shadow-2xl opacity-0 group-hover/nav-item:opacity-100 transition-opacity duration-200 pointer-events-none z-50 hidden md:block">
+                    <div className="text-[11px] font-bold text-[#C084FC] flex items-center gap-1.5 pb-1 border-b border-[rgba(139,92,246,0.2)]">
+                      <Settings className="h-3.5 w-3.5 text-[#A855F7]" />
+                      <span>Settings &amp; App Controls</span>
+                    </div>
+                    <p className="text-[9.5px] text-[#CBD5E1] mt-1.5 leading-relaxed">
+                      Configure AI models, Gemini API keys, connected apps access &amp; instant LocalStorage auto-save.
+                    </p>
+                    <div className="text-[9px] text-[#00D9A5] font-mono mt-1.5 pt-1 border-t border-white/5 flex items-center gap-1">
+                      <span>✓ Auto-Save LocalStorage Enabled</span>
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </nav>

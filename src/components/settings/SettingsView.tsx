@@ -236,6 +236,65 @@ export const SettingsView: React.FC = () => {
     }
   };
 
+  const [savedSectionName, setSavedSectionName] = useState<string | null>(null);
+
+  const handleSaveSection = (sectionName: string, e?: React.MouseEvent | React.FormEvent) => {
+    if (e) e.preventDefault();
+    updateSettings(formData);
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setLastSavedTime(nowStr);
+    try {
+      localStorage.setItem('abdullah_settings_last_saved', nowStr);
+      localStorage.setItem('abdullah_settings', JSON.stringify(formData));
+      if (formData.geminiApiKey) {
+        localStorage.setItem('user_gemini_api_key', formData.geminiApiKey);
+      }
+    } catch (err) {}
+    setSavedSectionName(sectionName);
+    setSaveSuccess(true);
+    sound.playReceiveSound();
+    setTimeout(() => {
+      setSavedSectionName(null);
+      setSaveSuccess(false);
+    }, 3500);
+  };
+
+  const SectionSaveHoverButton: React.FC<{ sectionName: string }> = ({ sectionName }) => {
+    const isThisSaved = savedSectionName === sectionName || saveSuccess;
+    return (
+      <div className="relative group/sec-save inline-block">
+        <button
+          type="button"
+          onClick={(e) => handleSaveSection(sectionName, e)}
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-bold border transition-all cursor-pointer shadow-md ${
+            isThisSaved
+              ? 'bg-[#00D9A5]/20 text-[#00D9A5] border-[#00D9A5]/50 shadow-[0_0_12px_rgba(0,217,165,0.3)]'
+              : 'bg-[#7C3AED]/20 hover:bg-[#7C3AED]/35 text-[#C084FC] hover:text-white border-[#7C3AED]/40 hover:border-[#A855F7]'
+          }`}
+          title={`Save ${sectionName} to LocalStorage`}
+        >
+          {isThisSaved ? <Check className="h-3.5 w-3.5 text-[#00D9A5]" /> : <Save className="h-3.5 w-3.5" />}
+          <span>{isThisSaved ? '✓ Saved' : 'Save Section'}</span>
+        </button>
+
+        {/* Floating Hover Verification Card on Section Save */}
+        <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-[#080817] border border-[#00D9A5]/40 rounded-xl shadow-2xl opacity-0 group-hover/sec-save:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+          <div className="text-[10.5px] font-bold text-[#00D9A5] flex items-center gap-1.5 pb-1 border-b border-[#00D9A5]/20">
+            <Check className="h-3 w-3" />
+            <span>Save: {sectionName}</span>
+          </div>
+          <p className="text-[9.5px] text-[#CBD5E1] mt-1.5 leading-relaxed">
+            Hover to verify: Click to sync all updates and settings in this section directly to browser LocalStorage.
+          </p>
+          <div className="text-[9px] text-[#00D9A5] font-mono mt-2 pt-1 border-t border-white/5 flex items-center justify-between">
+            <span>Storage:</span>
+            <span>{lastSavedTime ? `Synced at ${lastSavedTime}` : 'Active & Ready'}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const activeLangDetails = getLanguage(formData.language);
 
   return (
@@ -298,15 +357,18 @@ export const SettingsView: React.FC = () => {
               <span>{t.langModeSectionTitle}</span>
             </h2>
 
-            <button
-              type="button"
-              id="btn_open_language_modal_from_settings"
-              onClick={() => setIsLanguageModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30 px-3 py-1.5 text-xs font-semibold text-[#C084FC] border border-[#7C3AED]/40 transition-all self-start sm:self-auto shadow-sm"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>{t.openModalBtn}</span>
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                id="btn_open_language_modal_from_settings"
+                onClick={() => setIsLanguageModalOpen(true)}
+                className="flex items-center gap-1.5 rounded-xl bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30 px-3 py-1.5 text-xs font-semibold text-[#C084FC] border border-[#7C3AED]/40 transition-all shadow-sm"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>{t.openModalBtn}</span>
+              </button>
+              <SectionSaveHoverButton sectionName="Language Settings" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -368,21 +430,24 @@ export const SettingsView: React.FC = () => {
 
         {/* Gemini AI Engine & API Key Configuration */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-4 shadow-xl">
-          <div className="flex items-center justify-between pb-3 border-b border-[rgba(139,92,246,0.2)]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[rgba(139,92,246,0.2)]">
             <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#C084FC]" />
-              <span>Google Gemini AI Engine & Cloud API</span>
+              <span>Google Gemini AI Engine &amp; Cloud API</span>
             </h2>
-            <span className="text-[10px] font-mono text-[#00D9A5] bg-[#00D9A5]/15 px-2.5 py-1 rounded-lg border border-[#00D9A5]/30">
-              {formData.geminiApiKey ? 'API Configured' : 'Live / Hybrid Ready'}
-            </span>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-[10px] font-mono text-[#00D9A5] bg-[#00D9A5]/15 px-2.5 py-1 rounded-lg border border-[#00D9A5]/30">
+                {formData.geminiApiKey ? 'API Configured' : 'Live / Hybrid Ready'}
+              </span>
+              <SectionSaveHoverButton sectionName="Gemini AI &amp; API Key" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-[#94A3B8] font-medium">
-                  Google Gemini API Key (Direct Browser & Cloud)
+                  Google Gemini API Key (Direct Browser &amp; Cloud)
                 </label>
                 <a
                   href="https://aistudio.google.com/app/apikey"
@@ -418,16 +483,16 @@ export const SettingsView: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, geminiModel: e.target.value })}
                 className="w-full rounded-xl bg-[#080817] px-3.5 py-2.5 text-xs sm:text-sm text-[#F8FAFC] border border-[rgba(139,92,246,0.25)] focus:outline-none focus:border-[#A855F7]"
               >
-                <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (Ultra-fast, High-Fidelity & Grounding)</option>
-                <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (Deep Architecture & Complex Reasoning)</option>
-                <option value="gemini-2.0-flash">🚀 Gemini 2.0 Flash (Lightweight & Low Latency)</option>
+                <option value="gemini-2.5-flash">⚡ Gemini 2.5 Flash (Ultra-fast, High-Fidelity &amp; Grounding)</option>
+                <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (Deep Architecture &amp; Complex Reasoning)</option>
+                <option value="gemini-2.0-flash">🚀 Gemini 2.0 Flash (Lightweight &amp; Low Latency)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-[#94A3B8] font-medium mb-1">Execution Mode</label>
               <div className="rounded-xl bg-[#080817] p-2.5 border border-[rgba(139,92,246,0.2)] flex items-center justify-between">
-                <span className="text-xs text-[#F8FAFC]">Autonomous Universal Q&A + Multi-Phase Planning</span>
+                <span className="text-xs text-[#F8FAFC]">Autonomous Universal Q&amp;A + Multi-Phase Planning</span>
                 <span className="text-[10px] bg-[#7C3AED]/20 text-[#C084FC] px-2 py-0.5 rounded-md border border-[#7C3AED]/40">Active</span>
               </div>
             </div>
@@ -436,10 +501,13 @@ export const SettingsView: React.FC = () => {
 
         {/* Agent Profile & Identity */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-4 shadow-xl">
-          <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
-            <Cpu className="h-4 w-4 text-[#C084FC]" />
-            <span>Agent Identity & Autonomous Profile</span>
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[rgba(139,92,246,0.2)]">
+            <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
+              <Cpu className="h-4 w-4 text-[#C084FC]" />
+              <span>Agent Identity &amp; Autonomous Profile</span>
+            </h2>
+            <SectionSaveHoverButton sectionName="Agent Identity" />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -469,7 +537,7 @@ export const SettingsView: React.FC = () => {
               <input
                 type="text"
                 disabled
-                value="Abdullah (Owner & Principal)"
+                value="Abdullah (Owner &amp; Principal)"
                 className="w-full rounded-xl bg-[#080817]/60 px-3.5 py-2.5 text-[#94A3B8] border border-[rgba(139,92,246,0.2)] cursor-not-allowed"
               />
             </div>
@@ -478,37 +546,40 @@ export const SettingsView: React.FC = () => {
 
         {/* Executive Persona Deep Configuration */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-[rgba(139,92,246,0.2)] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[rgba(139,92,246,0.2)] pb-3">
             <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#A855F7]" />
-              <span>Executive Persona & Alignment Config</span>
+              <span>Executive Persona &amp; Alignment Config</span>
             </h2>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.executivePersona?.enabled ?? true}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    executivePersona: {
-                      ...(formData.executivePersona || {
-                        enabled: true,
-                        formalTone: true,
-                        requireThinking: true,
-                        documentSearch: true,
-                        actionPlanRequired: true,
-                      }),
-                      enabled: e.target.checked,
-                    },
-                  })
-                }
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-[#080817] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#94A3B8] peer-checked:after:bg-[#A855F7] after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#7C3AED]/30 border border-purple-500/20"></div>
-              <span className="ml-2 text-[10px] font-bold text-[#94A3B8] uppercase">
-                {formData.executivePersona?.enabled ? 'Active' : 'Disabled'}
-              </span>
-            </label>
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.executivePersona?.enabled ?? true}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      executivePersona: {
+                        ...(formData.executivePersona || {
+                          enabled: true,
+                          formalTone: true,
+                          requireThinking: true,
+                          documentSearch: true,
+                          actionPlanRequired: true,
+                        }),
+                        enabled: e.target.checked,
+                      },
+                    })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-[#080817] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#94A3B8] peer-checked:after:bg-[#A855F7] after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#7C3AED]/30 border border-purple-500/20"></div>
+                <span className="ml-2 text-[10px] font-bold text-[#94A3B8] uppercase">
+                  {formData.executivePersona?.enabled ? 'Active' : 'Disabled'}
+                </span>
+              </label>
+              <SectionSaveHoverButton sectionName="Executive Persona" />
+            </div>
           </div>
 
           <p className="text-[11px] text-[#94A3B8] leading-relaxed">
@@ -616,10 +687,13 @@ export const SettingsView: React.FC = () => {
 
         {/* Permissions & Safety */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-4 shadow-xl">
-          <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
-            <Shield className="h-4 w-4 text-[#D946EF]" />
-            <span>Safety & Security Guardrails</span>
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[rgba(139,92,246,0.2)]">
+            <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
+              <Shield className="h-4 w-4 text-[#D946EF]" />
+              <span>Safety &amp; Security Guardrails</span>
+            </h2>
+            <SectionSaveHoverButton sectionName="Safety Guardrails" />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -632,7 +706,7 @@ export const SettingsView: React.FC = () => {
                 className="w-full rounded-xl bg-[#080817] px-3.5 py-2.5 text-[#F8FAFC] border border-[rgba(139,92,246,0.25)] focus:outline-none"
               >
                 <option value="High">High (Strict Gate: All external actions require approval)</option>
-                <option value="Medium">Medium (Balanced: External communication & deletes gated)</option>
+                <option value="Medium">Medium (Balanced: External communication &amp; deletes gated)</option>
                 <option value="Low">Low (Permissive: Only sensitive deletions gated)</option>
               </select>
             </div>
@@ -684,7 +758,7 @@ export const SettingsView: React.FC = () => {
 
             <div className="pt-3 border-t border-[rgba(139,92,246,0.15)] space-y-3">
               <span className="text-[11px] font-bold tracking-wider text-[#C084FC] uppercase block">
-                Delegated Authority & Autopilot Settings
+                Delegated Authority &amp; Autopilot Settings
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="flex items-center justify-between p-3 rounded-xl bg-[#080817] border border-[rgba(139,92,246,0.18)] cursor-pointer">
@@ -757,7 +831,7 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
               <span className="rounded-lg bg-[#00D9A5]/15 px-2.5 py-1 text-[10px] font-mono font-semibold text-[#00D9A5] border border-[#00D9A5]/30">
-                Connected & Armed
+                Connected &amp; Armed
               </span>
             </div>
           </div>
@@ -771,15 +845,18 @@ export const SettingsView: React.FC = () => {
             <div>
               <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
                 <Layers className="h-4 w-4 text-[#C084FC]" />
-                <span>Application Access Control & Connected Apps</span>
+                <span>Application Access Control &amp; Connected Apps</span>
               </h2>
               <p className="text-[11px] text-[#94A3B8] mt-0.5">
                 Select and toggle read/action access for any service, or delete applications directly here or via chat.
               </p>
             </div>
-            <span className="self-start sm:self-auto rounded-lg bg-[#00D9A5]/15 px-2.5 py-1 text-[10px] font-mono font-semibold text-[#00D9A5] border border-[#00D9A5]/30">
-              {(settings.connectedApps || []).filter(a => a.enabled !== false).length} Apps Active
-            </span>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="rounded-lg bg-[#00D9A5]/15 px-2.5 py-1 text-[10px] font-mono font-semibold text-[#00D9A5] border border-[#00D9A5]/30">
+                {(settings.connectedApps || []).filter(a => a.enabled !== false).length} Apps Active
+              </span>
+              <SectionSaveHoverButton sectionName="App Access &amp; Permissions" />
+            </div>
           </div>
 
           {/* Master Permission Toggles */}
@@ -813,7 +890,7 @@ export const SettingsView: React.FC = () => {
                 <div>
                   <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
                     <Mail className="h-3.5 w-3.5 text-[#38BDF8]" />
-                    <span>Google Workspace (Gmail & Drive)</span>
+                    <span>Google Workspace (Gmail &amp; Drive)</span>
                   </span>
                   <span className="text-[10px] text-[#94A3B8] block mt-0.5">
                     Sync and read emails, documents, sheets, and drive files.
@@ -851,7 +928,7 @@ export const SettingsView: React.FC = () => {
                 <div>
                   <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
                     <Cpu className="h-3.5 w-3.5 text-[#A855F7]" />
-                    <span>Code Sandbox & AST Engine</span>
+                    <span>Code Sandbox &amp; AST Engine</span>
                   </span>
                   <span className="text-[10px] text-[#94A3B8] block mt-0.5">
                     Static code scanning, debugging, and automated refactoring.
@@ -889,7 +966,7 @@ export const SettingsView: React.FC = () => {
                 <div>
                   <span className="font-semibold text-[#F8FAFC] block text-xs flex items-center gap-1.5">
                     <Trash2 className="h-3.5 w-3.5 text-[#EF4444]" />
-                    <span>In-Chat App Control & Deletion</span>
+                    <span>In-Chat App Control &amp; Deletion</span>
                   </span>
                   <span className="text-[10px] text-[#94A3B8] block mt-0.5">
                     Permit agent to uninstall/delete applications directly via chat commands.
@@ -1004,23 +1081,26 @@ export const SettingsView: React.FC = () => {
         {/* CREWAI ENTERPRISE INTEGRATION                            */}
         {/* ======================================================== */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-[rgba(139,92,246,0.25)] space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-[rgba(139,92,246,0.2)] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[rgba(139,92,246,0.2)] pb-3">
             <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
               <Cpu className="h-4 w-4 text-[#C084FC]" />
-              <span>CrewAI Studio & Enterprise Integration</span>
+              <span>CrewAI Studio &amp; Enterprise Integration</span>
             </h2>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={formData.crewAiEnabled || false} 
-                onChange={(e) => setFormData({ ...formData, crewAiEnabled: e.target.checked })}
-                className="sr-only peer" 
-              />
-              <div className="w-9 h-5 bg-[#080817] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#94A3B8] peer-checked:after:bg-[#A855F7] after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-950/40 border border-purple-500/20"></div>
-              <span className="ml-2 text-[10px] font-bold text-[#94A3B8] uppercase">
-                {formData.crewAiEnabled ? 'Active' : 'Disabled'}
-              </span>
-            </label>
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={formData.crewAiEnabled || false} 
+                  onChange={(e) => setFormData({ ...formData, crewAiEnabled: e.target.checked })}
+                  className="sr-only peer" 
+                />
+                <div className="w-9 h-5 bg-[#080817] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#94A3B8] peer-checked:after:bg-[#A855F7] after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-950/40 border border-purple-500/20"></div>
+                <span className="ml-2 text-[10px] font-bold text-[#94A3B8] uppercase">
+                  {formData.crewAiEnabled ? 'Active' : 'Disabled'}
+                </span>
+              </label>
+              <SectionSaveHoverButton sectionName="CrewAI Settings" />
+            </div>
           </div>
 
           <p className="text-[11px] text-[#94A3B8] leading-relaxed">
@@ -1088,12 +1168,12 @@ export const SettingsView: React.FC = () => {
         {/* GOOGLE WORKSPACE LIVE DATA INTEGRATION                   */}
         {/* ======================================================== */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-emerald-500/25 space-y-4 shadow-xl premium-liquid-glass">
-          <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-500/20 pb-3">
             <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
               <Database className="h-4 w-4 text-[#10B981]" />
               <span>Google Workspace Live Data Connection</span>
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
                 googleToken 
                   ? 'bg-emerald-500/10 text-[#10B981] border-emerald-500/25' 
@@ -1102,6 +1182,7 @@ export const SettingsView: React.FC = () => {
                 <span className={`h-1.5 w-1.5 rounded-full ${googleToken ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
                 {googleToken ? 'Connected' : 'Offline'}
               </span>
+              <SectionSaveHoverButton sectionName="Google Workspace" />
             </div>
           </div>
 
@@ -1178,23 +1259,26 @@ export const SettingsView: React.FC = () => {
         {/* INTERACTIVE WHATSAPP AUTO-RESPONDER PANEL WITH SIMULATOR */}
         {/* ======================================================== */}
         <div className="rounded-2xl bg-[#0D0D20] p-4 sm:p-6 border border-blue-500/35 space-y-5 shadow-xl premium-liquid-glass">
-          <div className="flex items-center justify-between border-b border-blue-500/20 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-500/20 pb-3">
             <h2 className="text-sm font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-2">
               <Smartphone className="h-4 w-4 text-blue-400" />
               <span>WhatsApp Autonomous Auto-Responder</span>
             </h2>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={waEnabled} 
-                onChange={(e) => setWaEnabled(e.target.checked)}
-                className="sr-only peer" 
-              />
-              <div className="w-9 h-5 bg-[#080817] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#94A3B8] peer-checked:after:bg-blue-400 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-950 border border-blue-500/20"></div>
-              <span className="ml-2 text-[10px] font-bold text-[#94A3B8] uppercase">
-                {waEnabled ? 'Active' : 'Disabled'}
-              </span>
-            </label>
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={waEnabled} 
+                  onChange={(e) => setWaEnabled(e.target.checked)}
+                  className="sr-only peer" 
+                />
+                <div className="w-9 h-5 bg-[#080817] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#94A3B8] peer-checked:after:bg-blue-400 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-950 border border-blue-500/20"></div>
+                <span className="ml-2 text-[10px] font-bold text-[#94A3B8] uppercase">
+                  {waEnabled ? 'Active' : 'Disabled'}
+                </span>
+              </label>
+              <SectionSaveHoverButton sectionName="WhatsApp Responder" />
+            </div>
           </div>
 
           <p className="text-[11px] text-[#94A3B8] leading-relaxed">
