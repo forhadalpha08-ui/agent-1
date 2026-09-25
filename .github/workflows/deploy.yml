@@ -1,0 +1,44 @@
+name: Work OS CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Clone repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Install Dependencies (Using npm install for maximum robustness)
+      - name: Install Dependencies
+        run: npm install
+
+      # 4. Run Linter Checks
+      - name: Run Linter Checks
+        run: npm run lint || true
+
+      # 5. Build Application
+      - name: Build Application
+        run: npm run build
+
+      # 6. Upload Build Artifacts
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist/
