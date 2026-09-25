@@ -76,7 +76,7 @@ export async function sendAgentMessage(
   }
 }
 
-// In-Browser Direct Gemini API Engine
+// In-Browser Direct Gemini API Engine with Resilient Model Cascade
 async function callBrowserGeminiApi(
   apiKey: string,
   prompt: string,
@@ -86,8 +86,12 @@ async function callBrowserGeminiApi(
   userProfile?: UserProfile,
   settings?: any
 ): Promise<ChatResponse> {
-  const modelName = settings?.geminiModel || 'gemini-2.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const modelsToTry = [
+    settings?.geminiModel || 'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-pro'
+  ];
 
   const isBangla = language === 'Bangla' || language === 'bn';
   const userName = userProfile?.name || 'Abdullah';
@@ -97,11 +101,11 @@ async function callBrowserGeminiApi(
 
   const systemInstructionText = isBangla
     ? `আপনি হলেন Boss ${userName}-এর উচ্চক্ষমতাসম্পন্ন পার্সোনাল এআই চিফ অব স্টাফ, মাস্টার আর্কিটেক্ট ও অটোনোমাস ওয়ার্ক এজেন্ট (Google DeepMind / Antigravity Agent স্টাইল)। Boss ${userName}${userRole}-কে যেকোনো কাজ এবং বাস্তব জীবনের নির্দেশনায় সহায়তা করতে প্রস্তুত।${customInstructions}${techStack}
-যেকোনো বিষয়ের প্রশ্নের পুঙ্খানুপুঙ্খ উত্তর দিন (কোড, গণিত, বিজ্ঞান, ব্যবসা, লেখালেখি, দৈনন্দিন কাজ)।
+যেকোনো বিষয়ের প্রশ্নের পুঙ্খানুপুঙ্খ উত্তর দিন (কোড, গণিত, বিজ্ঞান, ব্যবসা, উপার্জন পরিকল্পনা, লেখালেখি, দৈনন্দিন কাজ)।
 পরিকল্পনা করার ক্ষেত্রে multi-phase roadmap, milestones, architecture, risk management, এবং verification protocol তৈরি করুন।
 উত্তরের শুরুতে <thinking>...</thinking> ব্লকে আপনার যৌক্তিক বিশ্লেষণ প্রকাশ করুন।`
     : `You are Boss ${userName}'s elite personal AI Chief of Staff, Master Systems Architect, and Autonomous Work Agent (Google DeepMind / Antigravity Agent style). Assisting Boss ${userName}${userRole}.${customInstructions}${techStack}
-Answer ANY question across coding, mathematics, systems architecture, business, research, and personal work with master-level depth.
+Answer ANY question across coding, mathematics, systems architecture, business, income planning, research, and personal work with master-level depth.
 When asked to plan, output an exhaustive multi-phase roadmap with milestones, architecture/code blueprints, risk mitigation, and verification protocol.
 Output a <thinking>...</thinking> block at the very start of your response.`;
 
@@ -121,28 +125,50 @@ Output a <thinking>...</thinking> block at the very start of your response.`;
     },
   ];
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents,
-      systemInstruction: {
-        parts: [{ text: systemInstructionText }],
-      },
-      generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 8192,
-      },
-    }),
-  });
+  let rawText = '';
+  let modelUsed = '';
+  let lastError: any = null;
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.error?.message || `Gemini API call failed with status ${response.status}`);
+  for (const model of modelsToTry) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey.trim(),
+        },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: {
+            parts: [{ text: systemInstructionText }],
+          },
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 8192,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (rawText) {
+          modelUsed = model;
+          break;
+        }
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        lastError = new Error(errData.error?.message || `Status ${response.status}`);
+      }
+    } catch (err: any) {
+      lastError = err;
+    }
   }
 
-  const data = await response.json();
-  let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  if (!rawText) {
+    throw lastError || new Error('All in-browser Gemini models failed.');
+  }
 
   let thinkingText = '';
   const thinkingMatch = rawText.match(/<thinking>([\s\S]*?)<\/thinking>/i);
@@ -163,11 +189,11 @@ Output a <thinking>...</thinking> block at the very start of your response.`;
         toolName: 'Google Gemini Direct Engine',
         category: 'AI_FOUNDATION',
         status: 'success',
-        description: `Direct in-browser inference completed via ${modelName}.`,
+        description: `Direct in-browser inference completed via ${modelUsed}.`,
         timestamp: new Date().toLocaleTimeString(),
       },
     ],
-    mode: `BROWSER_GEMINI_DIRECT (${modelName})`,
+    mode: `BROWSER_GEMINI_DIRECT (${modelUsed})`,
   };
 }
 
@@ -679,9 +705,10 @@ Transform your daily operations with a goal-driven AI assistant designed to exec
     };
   }
 
-  // 5.5 Planning & Income Strategy (100$ in 1 Month)
+  // 5.5 Specific 100$ static plan query (only if explicitly targeting $100 and no other amount)
   const isOneHundredPlanQuery = 
-    (p.includes('100') || p.includes('১০০')) && 
+    /\b(100|১০০)\b/.test(p) && 
+    !/\b(2500|500|1000|2000|5000|10000|\d{3,})\b/.test(p.replace(/\b100\b/g, '')) &&
     (p.includes('plan') || p.includes('earn') || p.includes('income') || p.includes('dollar') || p.includes('money') || p.includes('আয়') || p.includes('উপার্জন') || p.includes('পরিকল্পনা'));
 
   if (isOneHundredPlanQuery) {
@@ -739,13 +766,15 @@ Abdullah, here is your step-by-step verified action plan to earn **$100 within 3
     };
   }
 
-  // 6. Greetings / System Capabilities / General Query
-  const isGreeting = 
-    /\b(hi|hello|hey|help|yo)\b/i.test(p) || 
-    p.includes('who are you') || 
-    p.includes('what can you do');
+  // 6. Pure Greetings only (Do NOT intercept if the prompt contains a task, plan, goal, or question)
+  const hasTaskIntent = /plan|earn|make|build|code|bug|write|create|find|explain|how|what|why|guide|strategy|income|dollar|\$|month|week|target|টাকা|ডলার|পরিকল্পনা|বানাও|রোডম্যাপ/i.test(p);
+  const isPureGreeting = !hasTaskIntent && (
+    /^(?:hi|hello|hey|yo|help|হাই|হ্যালো|হেলো)[\s.!?,]*$/i.test(p.trim()) || 
+    p.trim() === 'who are you' || 
+    p.trim() === 'what can you do'
+  );
 
-  if (isGreeting) {
+  if (isPureGreeting) {
     return {
       thinking: `Greeting parsed. Greeting user Abdullah. Listing authorized workspace tools and permission modes in the configured language to ensure full visibility of capabilities.`,
       content: isBangla
